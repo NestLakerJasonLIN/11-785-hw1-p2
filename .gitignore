@@ -1,4 +1,3 @@
-data/*
 *.zip
 **/.DS_Store
 **/._*
@@ -6,4 +5,8 @@ data/*
 **/.ipynb_checkpoints
 .idea
 # do track data folder itself
+data/*
 !data/.gitkeep 
+
+model/*
+!model/.gitkeep
