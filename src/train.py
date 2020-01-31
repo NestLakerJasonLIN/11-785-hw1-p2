@@ -51,7 +51,7 @@ def evaluate_model(model, test_loader, criterion, device):
         total_predictions = 0.0
         correct_predictions = 0.0
 
-        for batch_idx, (data, target) in enumerate(test_loader):   
+        for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
             data = data.to(device)
             target = target.to(device)
 
