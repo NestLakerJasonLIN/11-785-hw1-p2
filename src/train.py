@@ -6,6 +6,8 @@ def train_model(model, epochs, train_loader, eval_loader, criterion, optimizer, 
     eval_losses = []
     eval_accs = []
 
+    model.to(device)
+
     for epoch in range(epochs):
         print("epoch: %d" % (epoch+1))
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device=device)
