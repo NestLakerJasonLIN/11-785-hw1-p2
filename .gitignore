@@ -8,5 +8,5 @@
 data/*
 !data/.gitkeep 
 
-model/*
-!model/.gitkeep
+checkpoint/*
+!checkpoint/.gitkeep

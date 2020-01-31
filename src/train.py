@@ -1,25 +1,45 @@
 import time
 import torch
-from tqdm import tqdm
+from tqdm.notebook import tqdm
+from utils import *
 
-def train_model(model, epochs, train_loader, eval_loader, criterion, optimizer, device):
-    train_losses = []
-    eval_losses = []
-    eval_accs = []
+def train_model(model, epochs, train_loader, eval_loader, criterion, optimizer, device,
+                checkpoint, checkpoint_filename=""):
+    assert_init_checkpoint(checkpoint) # TODO
 
     model.to(device)
     model.train()
 
-    for epoch in range(epochs):
-        print("epoch: %d" % (epoch+1))
+    for epoch in range(checkpoint["model_statistics"]["curr_epoch"]+1,
+                       checkpoint["model_statistics"]["curr_epoch"]+epochs+1):
+        print("epoch: %d" % (epoch))
         train_loss = train_epoch(model, train_loader, criterion, optimizer, device=device)
         eval_loss, eval_acc = evaluate_model(model, eval_loader, criterion, device=device)
-        train_losses.append(train_loss)
-        eval_losses.append(eval_loss)
-        eval_accs.append(eval_acc)
-        print('='*20)
-    
-    return train_losses, eval_losses, eval_accs
+        checkpoint["model_statistics"]["train_losses"].append(train_loss)
+        checkpoint["model_statistics"]["eval_losses"].append(eval_loss)
+        checkpoint["model_statistics"]["eval_accs"].append(eval_acc)
+
+        # update model statistics
+        checkpoint["model_statistics"]["curr_epoch"] = epoch
+        if eval_loss < checkpoint["model_statistics"]["best_eval_loss"]:
+            checkpoint["model_statistics"]["best_eval_loss"] = eval_loss
+            checkpoint["model_statistics"]["best_eval_acc"] = eval_acc
+            checkpoint["model_statistics"]["best_eval_epoch"] = epoch
+            checkpoint["model_state_dict"] = model.state_dict()
+            checkpoint["optimizer_state_dict"] = optimizer.state_dict()
+
+            # save model as file exists
+            if checkpoint_filename:
+                torch.save(checkpoint, checkpoint_filename)
+                print('The {}th epoch model is saved to {}'.format(epoch, checkpoint_filename))
+
+        print_model_statistics(checkpoint)
+
+        print('=' * 20)
+
+    return checkpoint["model_statistics"]["train_losses"], \
+           checkpoint["model_statistics"]["eval_losses"], \
+           checkpoint["model_statistics"]["eval_accs"]
 
 def train_epoch(model, train_loader, criterion, optimizer, device):
     running_loss = 0.0
