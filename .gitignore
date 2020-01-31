@@ -1,6 +1,9 @@
-data
+data/*
 *.zip
 **/.DS_Store
 **/._*
 **/__pycache__
 **/.ipynb_checkpoints
+.idea
+# do track data folder itself
+!data/.gitkeep 
