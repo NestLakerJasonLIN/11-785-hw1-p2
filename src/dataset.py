@@ -1,16 +1,11 @@
 from torch.utils.data import Dataset
-from bisect import bisect
 import torch
 import numpy as np
 
 class uniformDataset(Dataset):
     def __init__(self, x, y=None, is_test=False):
         super().__init__()
-        
-        # self.is_test = is_test
-        # self._x = np.concatenate(x)
-        # if not is_test:
-        #     self._y = np.concatenate(y)
+
         self.is_test = is_test
         self._x = x
         self._y = y
@@ -46,33 +41,16 @@ class uniformDataset(Dataset):
             self.utter_index_table[self.cum_utter_lens[idx]: self.cum_utter_lens[idx + 1]] = idx
 
     def _decode_index(self, index):
-        utter_idx = bisect(self.cum_utter_lens, index) - 1
-        frame_idx = index - self.cum_utter_lens[utter_idx]
-        return utter_idx, frame_idx
-
-    def _decode_index_table(self, index):
         utter_idx = self.utter_index_table[index]
         frame_idx = index - self.cum_utter_lens[utter_idx]
         return utter_idx, frame_idx
 
     def __len__(self):
-        # return len(self._x)
         return self.frame_len
       
     def __getitem__(self, index):
-        # v2: one flat ndarray
-        # x_item = torch.from_numpy(self._x[index]).float()
-        # y_item = self._y[index]
-        # if not self.is_test:
-        #     return x_item, y_item
-        # else:
-        #     return x_item
+        utter_idx, frame_idx = self._decode_index(index)
 
-        # v3: mapping table
-        utter_idx, frame_idx = self._decode_index_table(index)
-
-        # v1: bisect
-        # utter_idx, frame_idx = self._decode_index(index)
         x_item = torch.from_numpy(self._x[utter_idx][frame_idx]).float()
         if not self.is_test:
             y_item = self._y[utter_idx][frame_idx]
@@ -82,7 +60,7 @@ class uniformDataset(Dataset):
 
 # uniformly sampling utterances and use context padding
 class contextUniformDataset(uniformDataset):
-    def __init__(self, x, y=None, is_test=False, context_size = 10):
+    def __init__(self, x, y=None, is_test=False, context_size=10):
         super(uniformDataset, self).__init__()
         self._x = x
         self._y = y
@@ -99,19 +77,8 @@ class contextUniformDataset(uniformDataset):
         self._build_fields(context_size=context_size)
 
     def __getitem__(self, index):
-        # v2: flat ndarray
-        # x_item = build_context_features(self._x, index, self._context_size)
-        # if not self.is_test:
-        #     y_item = self._y[index]
-        #     return x_item, y_item
-        # else:
-        #     return x_item
+        utter_idx, frame_idx = self._decode_index(index)
 
-        # v3: mapping table
-        utter_idx, frame_idx = self._decode_index_table(index)
-
-        # v1: bisect
-        # utter_idx, frame_idx = self._decode_index(index)
         x_item = build_context_features(self._x[utter_idx], frame_idx, self._context_size)
         if not self.is_test:
             y_item = self._y[utter_idx][frame_idx]
@@ -125,12 +92,6 @@ class contextUniformDataset(uniformDataset):
 # given an utterance and a frame index, build context features from original feature
 # return constructed features with context of context_size
 def build_context_features(utterance, frame_idx, context_size):
-    # # pad with zero
-    # prev_shape = utterance.shape
-    # utterance = np.pad(utterance, ((context_size, context_size), (0, 0)),
-    #                    "constant", constant_values=0)
-    # assert utterance.shape == (prev_shape[0] + context_size * 2, prev_shape[1])
-
     # index shift right by context_size
     x = utterance[frame_idx]
     before = utterance[frame_idx: frame_idx + context_size]
