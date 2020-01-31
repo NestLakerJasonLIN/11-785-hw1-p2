@@ -1,5 +1,6 @@
 import time
 import torch
+from tqdm import tqdm
 
 def train_model(model, epochs, train_loader, eval_loader, criterion, optimizer, device):
     train_losses = []
@@ -7,6 +8,7 @@ def train_model(model, epochs, train_loader, eval_loader, criterion, optimizer, 
     eval_accs = []
 
     model.to(device)
+    model.train()
 
     for epoch in range(epochs):
         print("epoch: %d" % (epoch+1))
@@ -20,12 +22,10 @@ def train_model(model, epochs, train_loader, eval_loader, criterion, optimizer, 
     return train_losses, eval_losses, eval_accs
 
 def train_epoch(model, train_loader, criterion, optimizer, device):
-    model.train()
-
     running_loss = 0.0
     
     start_time = time.time()
-    for batch_idx, (data, target) in enumerate(train_loader):   
+    for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
         optimizer.zero_grad()   # .backward() accumulates gradients
         data = data.to(device)
         target = target.to(device) # all data & model on same device

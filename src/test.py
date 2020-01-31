@@ -2,10 +2,12 @@ import torch
 import numpy as np
 
 def test_model(model, test_loader, device, save=False, filename="../data/test_pred.csv"):
-    predicts = torch.LongTensor()
+    predicts = torch.LongTensor().to(device)
     
     with torch.no_grad():
         model.eval()
+
+        model.to(device)
 
         # no target in test dataset/data loader
         for batch_idx, data in enumerate(test_loader):
@@ -20,7 +22,8 @@ def test_model(model, test_loader, device, save=False, filename="../data/test_pr
     assert predicts.shape[0] == len(test_loader.dataset)
     
     if save:
-        result = np.concatenate([np.arange(len(predicts)).reshape(-1, 1), predicts.numpy().reshape(-1, 1)], axis=1)
+        result = np.concatenate([np.arange(len(predicts)).reshape(-1, 1),
+                                 predicts.detach().cpu().clone().numpy().reshape(-1, 1)], axis=1)
         np.savetxt(filename, result, fmt="%i", delimiter=",", header="id,label", comments="")
     
     return predicts
