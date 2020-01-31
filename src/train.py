@@ -23,6 +23,8 @@ def train_model(model, epochs, train_loader, eval_loader, criterion, optimizer, 
 
 def train_epoch(model, train_loader, criterion, optimizer, device):
     running_loss = 0.0
+    total_predictions = 0.0
+    correct_predictions = 0.0
     
     start_time = time.time()
     for batch_idx, (data, target) in enumerate(tqdm(train_loader)):
@@ -31,6 +33,12 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
         target = target.to(device) # all data & model on same device
 
         outputs = model(data)
+
+        _, predicted = torch.max(outputs.data, 1)
+        predicted.detach_()
+        total_predictions += target.size(0)
+        correct_predictions += (predicted == target).sum().item()
+
         loss = criterion(outputs, target)
         running_loss += loss.item()
 
@@ -40,7 +48,9 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
     end_time = time.time()
     
     running_loss /= len(train_loader)
+    acc = (correct_predictions / total_predictions) * 100.0
     print('Training Loss: ', running_loss, 'Time: ',end_time - start_time, 's')
+    print('Training Accuracy: ', acc, '%')
     return running_loss
 
 def evaluate_model(model, test_loader, criterion, device):
