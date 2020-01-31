@@ -17,7 +17,7 @@ class uniformDataset(Dataset):
         self._build_fields()
 
     # internal usage for building fields. Only valid for uniformly sampled dataset
-    def _build_fields(self):
+    def _build_fields(self, context_size=0):
         # train/eval dataset
         if not self.is_test:
             assert self._y is not None
@@ -28,8 +28,8 @@ class uniformDataset(Dataset):
             self.cum_utter_lens = [0] # a list of cumulative frames for each utterance
             for idx, utter in enumerate(self._x):
                 utter_labels = self._y[idx]
-                assert len(utter) == len(utter_labels)
-                self.frame_len += len(utter)
+                assert len(utter)-2*context_size == len(utter_labels)
+                self.frame_len += (len(utter)-2*context_size)
                 self.cum_utter_lens.append(self.frame_len)
         # test dataset
         else:
@@ -37,12 +37,11 @@ class uniformDataset(Dataset):
             self.frame_len = 0 # total number of frames
             self.cum_utter_lens = [0] # a list of cumulative frames for each utterance
             for utter in self._x:
-                self.frame_len += len(utter)
+                self.frame_len += (len(utter)-2*context_size)
                 self.cum_utter_lens.append(self.frame_len)
 
-        self.utter_index_table = np.ones(self.frame_len).astype(int)
-
         # generate table mapping dataset_idx -> utter idx
+        self.utter_index_table = np.ones(self.frame_len).astype(int)
         for idx in range(len(self.cum_utter_lens) - 1):
             self.utter_index_table[self.cum_utter_lens[idx]: self.cum_utter_lens[idx + 1]] = idx
 
@@ -84,8 +83,20 @@ class uniformDataset(Dataset):
 # uniformly sampling utterances and use context padding
 class contextUniformDataset(uniformDataset):
     def __init__(self, x, y=None, is_test=False, context_size = 10):
-        super(contextUniformDataset, self).__init__(x, y, is_test)
+        super(uniformDataset, self).__init__()
+        self._x = x
+        self._y = y
+        self.is_test = is_test
+
+        # pad with zero
+        for idx in range(len(self._x)):
+            prev_shape = self._x[idx].shape
+            self._x[idx] = np.pad(self._x[idx], ((context_size, context_size), (0, 0)),
+                               "constant", constant_values=0)
+            assert self._x[idx].shape == (prev_shape[0] + context_size * 2, prev_shape[1])
+
         self._context_size = context_size
+        self._build_fields(context_size=context_size)
 
     def __getitem__(self, index):
         # v2: flat ndarray
@@ -114,12 +125,11 @@ class contextUniformDataset(uniformDataset):
 # given an utterance and a frame index, build context features from original feature
 # return constructed features with context of context_size
 def build_context_features(utterance, frame_idx, context_size):
-    # pad with zero
-    prev_shape = utterance.shape
-    utterance = np.pad(utterance, ((context_size, context_size), (0, 0)),
-                       "constant", constant_values=0)
-
-    assert utterance.shape == (prev_shape[0] + context_size * 2, prev_shape[1])
+    # # pad with zero
+    # prev_shape = utterance.shape
+    # utterance = np.pad(utterance, ((context_size, context_size), (0, 0)),
+    #                    "constant", constant_values=0)
+    # assert utterance.shape == (prev_shape[0] + context_size * 2, prev_shape[1])
 
     # index shift right by context_size
     x = utterance[frame_idx]
