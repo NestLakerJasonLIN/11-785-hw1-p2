@@ -1,14 +1,14 @@
 import torch
 import numpy as np
 
-def test_model(model, data_loader, device, save=False, filename="../data/test_pred.csv"):
-    predicts = torch.LongTensor([])
+def test_model(model, test_loader, device, save=False, filename="../data/test_pred.csv"):
+    predicts = torch.LongTensor()
     
     with torch.no_grad():
         model.eval()
 
         # no target in test dataset/data loader
-        for batch_idx, data in enumerate(data_loader):   
+        for batch_idx, data in enumerate(test_loader):
             data = data.to(device)
 
             outputs = model(data)
@@ -17,7 +17,7 @@ def test_model(model, data_loader, device, save=False, filename="../data/test_pr
             
             predicts = torch.cat([predicts, predict])
     
-    assert predicts.shape[0] == len(data_loader.dataset)
+    assert predicts.shape[0] == len(test_loader.dataset)
     
     if save:
         result = np.concatenate([np.arange(len(predicts)).reshape(-1, 1), predicts.numpy().reshape(-1, 1)], axis=1)
