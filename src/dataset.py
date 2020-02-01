@@ -93,7 +93,7 @@ class contextUniformDataset(uniformDataset):
 # return constructed features with context of context_size
 def build_context_features(utterance, frame_idx, context_size):
     # index shift right by context_size
-    x = utterance[frame_idx]
+    x = utterance[context_size + frame_idx]
     before = utterance[frame_idx: frame_idx + context_size]
     after = utterance[frame_idx + 1 + context_size: frame_idx + 2 * context_size + 1]
     before, after = before.reshape(-1), after.reshape(-1)
