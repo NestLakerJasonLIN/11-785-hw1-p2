@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 
 def test_model(model, test_loader, device, save=False, filename="../data/test_pred.csv"):
     predicts = torch.LongTensor().to(device)
