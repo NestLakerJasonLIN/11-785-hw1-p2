@@ -73,7 +73,7 @@ def train_epoch(model, train_loader, criterion, optimizer, device):
     print('Training Accuracy: ', acc, '%')
     return running_loss
 
-def evaluate_model(model, test_loader, criterion, device):
+def evaluate_model(model, eval_loader, criterion, device):
     with torch.no_grad():
         model.eval()
 
@@ -81,7 +81,7 @@ def evaluate_model(model, test_loader, criterion, device):
         total_predictions = 0.0
         correct_predictions = 0.0
 
-        for batch_idx, (data, target) in enumerate(tqdm(test_loader)):
+        for batch_idx, (data, target) in enumerate(tqdm(eval_loader)):
             data = data.to(device)
             target = target.to(device)
 
@@ -95,7 +95,7 @@ def evaluate_model(model, test_loader, criterion, device):
             running_loss += loss.item()
 
 
-        running_loss /= len(test_loader)
+        running_loss /= len(eval_loader)
         acc = (correct_predictions/total_predictions)*100.0
         print('evaluate Loss: ', running_loss)
         print('evaluate Accuracy: ', acc, '%')
