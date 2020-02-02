@@ -1,7 +1,7 @@
 import torch.nn as nn
 
 class MLP(nn.Module):
-    def __init__(self, size_list, activation="relu"):
+    def __init__(self, size_list, activation="relu", batch_norm=True):
         super(MLP, self).__init__()
         layers = []
         self.size_list = size_list
@@ -11,6 +11,8 @@ class MLP(nn.Module):
                 layers.append(nn.ReLU())
             else:
                 raise NotImplementedError
+            if batch_norm:
+                layers.append(nn.BatchNorm1d(num_features=size_list[i+1]))
         layers.append(nn.Linear(size_list[-2], size_list[-1]))
         self.net = nn.Sequential(*layers)
 
