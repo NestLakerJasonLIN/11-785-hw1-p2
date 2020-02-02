@@ -2,6 +2,32 @@ from torch.utils.data import Dataset
 import torch
 import numpy as np
 
+class simpleDataset(Dataset):
+    def __init__(self, x, y=None, is_test=False, context_size=12):
+        super().__init__()
+        self._x = np.concatenate(x)
+        self._y = np.concatenate(y)
+        self.is_test = is_test
+        self.context_size = context_size
+
+        # pad only head/tail zero
+        prev_shape = self._x.shape
+        self._x = np.pad(self._x, ((context_size, context_size), (0, 0)),
+                         "constant", constant_values=0)
+        assert self._x.shape == (prev_shape[0] + context_size * 2, prev_shape[1])
+        assert self._x.shape[0] - context_size*2 == self._y.shape[0]
+
+    def __len__(self):
+        return len(self._x) - self.context_size * 2
+
+    def __getitem__(self, index):
+        x_item = torch.from_numpy(self._x[index : index + 2*self.context_size+1].reshape(-1)).float()
+        if not self.is_test:
+            y_item = self._y[index]
+            return x_item, y_item
+        else:
+            return x_item
+
 class uniformDataset(Dataset):
     def __init__(self, x, y=None, is_test=False):
         super().__init__()
